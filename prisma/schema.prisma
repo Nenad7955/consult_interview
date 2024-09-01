@@ -1,0 +1,70 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Client {
+  client_id      String        @id @default(uuid())
+  name           String
+  balance_quote  Decimal       @db.Decimal(39, 8) @default(0)
+  balance_tokens Decimal       @db.Decimal(39, 8) @default(0)
+  transactions   Transaction[]
+}
+
+model PlatformBalance {
+  balance_id     String  @id @default(uuid())
+  balance_tokens Decimal @db.Decimal(39, 8)
+  balance_sol    Decimal @db.Decimal(39, 8)
+  last_updated   Int
+}
+
+model Transaction {
+  transaction_id          String          @id @default(uuid())
+  user_id                 String
+  user                    Client?         @relation(fields: [user_id], references: [client_id])
+  asset_id                String
+  asset                   Asset?          @relation(fields: [asset_id], references: [asset_id])
+  transaction_type        TransactionType
+  position_type           PositionType
+  status                  StatusType
+  dex_transaction_id      String
+  amount_token            Decimal         @db.Decimal(39, 8)
+  quote_amount            Decimal         @db.Decimal(39, 8)
+  platform_balance_before Decimal         @db.Decimal(39, 8)
+  platform_balance_after  Decimal         @db.Decimal(39, 8)
+  date                    Int
+}
+
+model Asset {
+  asset_id         String        @id @default(uuid())
+  contract_address String        @unique()
+  ticker           String
+  transactions     Transaction[]
+}
+
+// ENUMS
+enum TransactionType {
+  open_position
+  close_position
+}
+
+enum PositionType {
+  long
+  short
+}
+
+enum StatusType {
+  pending
+  successful
+  failed
+}
